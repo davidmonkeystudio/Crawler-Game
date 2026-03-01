@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深渊爬行者 · Dungeon Crawler</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 标题屏幕 -->
+    <div id="title-screen">
+      <div class="title-content">
+        <h1 class="game-title">深渊爬行者</h1>
+        <p class="game-subtitle">DUNGEON CRAWLER</p>
+        <div class="title-art">
+          <pre>
+    ╔═══════════════╗
+    ║  @ → ♦ ↓ 🗡  ║
+    ║  # # # # # #  ║
+    ║  . . M . . .  ║
+    ║  # # # # # #  ║
+    ╚═══════════════╝
+          </pre>
+        </div>
+        <button id="start-btn" class="btn-primary">开始冒险</button>
+        <button id="help-btn" class="btn-secondary">操作说明</button>
+      </div>
+    </div>
+
+    <!-- 帮助界面 -->
+    <div id="help-screen" class="hidden">
+      <div class="help-content">
+        <h2>操作说明</h2>
+        <div class="help-grid">
+          <div class="help-section">
+            <h3>移动 & 战斗</h3>
+            <p>↑ ↓ ← →  /  W A S D — 移动</p>
+            <p>向敌人方向移动 — 攻击</p>
+            <p>向楼梯移动 — 下一层</p>
+          </div>
+          <div class="help-section">
+            <h3>物品</h3>
+            <p>G — 拾取物品</p>
+            <p>1-5 — 使用背包物品</p>
+            <p>E — 装备/卸下武器</p>
+          </div>
+          <div class="help-section">
+            <h3>提示</h3>
+            <p>探索发现宝箱和秘密</p>
+            <p>更深的楼层有更强的敌人</p>
+            <p>死亡是永久的，谨慎行动！</p>
+          </div>
+        </div>
+        <button id="help-back-btn" class="btn-primary">返回</button>
+      </div>
+    </div>
+
+    <!-- 主游戏界面 -->
+    <div id="game-screen" class="hidden">
+      <div id="game-layout">
+        <!-- 左侧面板：角色状态 -->
+        <div id="left-panel">
+          <div class="panel-section">
+            <h3 id="player-name">勇者</h3>
+            <div class="stat-row">
+              <span class="stat-label">Lv</span>
+              <span id="player-level" class="stat-value">1</span>
+            </div>
+            <div class="bar-label">HP</div>
+            <div class="bar-container">
+              <div id="hp-bar" class="bar hp-bar" style="width:100%"></div>
+              <span id="hp-text" class="bar-text">20/20</span>
+            </div>
+            <div class="bar-label">XP</div>
+            <div class="bar-container">
+              <div id="xp-bar" class="bar xp-bar" style="width:0%"></div>
+              <span id="xp-text" class="bar-text">0/10</span>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3>属性</h3>
+            <div class="stat-row">
+              <span class="stat-label">⚔ 攻击</span>
+              <span id="player-atk" class="stat-value">5</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">🛡 防御</span>
+              <span id="player-def" class="stat-value">2</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">💰 金币</span>
+              <span id="player-gold" class="stat-value">0</span>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3>装备</h3>
+            <div id="equipped-weapon" class="equip-slot">拳头</div>
+            <div id="equipped-armor" class="equip-slot">布衣</div>
+          </div>
+
+          <div class="panel-section">
+            <h3>背包 <span class="hint">(1-5 使用)</span></h3>
+            <div id="inventory-list">
+              <div class="empty-slot">—</div>
+              <div class="empty-slot">—</div>
+              <div class="empty-slot">—</div>
+              <div class="empty-slot">—</div>
+              <div class="empty-slot">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中间：游戏画布 -->
+        <div id="center-panel">
+          <div id="floor-info">
+            <span id="floor-text">第 1 层</span>
+            <span id="turn-text">回合 1</span>
+          </div>
+          <canvas id="game-canvas" width="640" height="640"></canvas>
+        </div>
+
+        <!-- 右侧面板：消息日志 & 小地图 -->
+        <div id="right-panel">
+          <div class="panel-section minimap-section">
+            <h3>小地图</h3>
+            <canvas id="minimap-canvas" width="160" height="160"></canvas>
+          </div>
+
+          <div class="panel-section log-section">
+            <h3>消息</h3>
+            <div id="message-log">
+              <p class="msg-info">欢迎来到深渊...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 游戏结束界面 -->
+    <div id="gameover-screen" class="hidden">
+      <div class="gameover-content">
+        <h2 id="gameover-title">你已陨落</h2>
+        <div id="gameover-stats"></div>
+        <button id="restart-btn" class="btn-primary">再次冒险</button>
+        <button id="menu-btn" class="btn-secondary">返回主菜单</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="src/utils.js"></script>
+  <script src="src/dungeon.js"></script>
+  <script src="src/entities.js"></script>
+  <script src="src/items.js"></script>
+  <script src="src/combat.js"></script>
+  <script src="src/renderer.js"></script>
+  <script src="src/ui.js"></script>
+  <script src="src/game.js"></script>
+</body>
+</html>
