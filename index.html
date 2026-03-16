@@ -1,262 +1,141 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>深渊爬行者 · Dungeon Crawler</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深渊地牢 - Roguelike 地牢爬行者</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
+    <div id="game-container">
+        <!-- 标题画面 -->
+        <div id="title-screen">
+            <div class="title-content">
+                <h1 class="game-title">深渊地牢</h1>
+                <p class="game-subtitle">Abyss Dungeon Crawler</p>
+                <div class="title-art">
+                    ⚔️ 🏰 💀
+                </div>
+                <button id="btn-start" class="menu-btn">开始冒险</button>
+                <button id="btn-help" class="menu-btn">操作说明</button>
+            </div>
+        </div>
 
-  <!-- ══ 标题屏幕 ══ -->
-  <div id="title-screen">
-    <div class="title-content">
-      <div class="title-logo">
-        <h1 class="game-title">深渊爬行者</h1>
-        <p class="game-subtitle">D U N G E O N &nbsp; C R A W L E R</p>
-      </div>
-      <div class="title-art">
-        <pre id="title-animation">
-  ╔══════════════════════╗
-  ║ @ → ♦ ↓ ⚔ S G O V  ║
-  ║ # # # # # # # # # # ║
-  ║ . . . . M . . . . . ║
-  ║ # # # # # # # # # # ║
-  ╚══════════════════════╝</pre>
-      </div>
-      <div class="title-buttons">
-        <button id="start-btn" class="btn-primary">⚔ 开始冒险</button>
-        <button id="help-btn" class="btn-secondary">? 操作说明</button>
-      </div>
-      <p class="title-hint">探索 10 层地牢 · 击败深渊魔王 · 永久死亡</p>
+        <!-- 帮助画面 -->
+        <div id="help-screen" class="hidden">
+            <div class="help-content">
+                <h2>操作说明</h2>
+                <div class="help-grid">
+                    <div class="help-item">
+                        <span class="key">W A S D / 方向键</span>
+                        <span class="desc">移动 / 攻击</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">空格键</span>
+                        <span class="desc">等待一回合</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">E</span>
+                        <span class="desc">拾取物品</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">Q</span>
+                        <span class="desc">使用药水</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">></span>
+                        <span class="desc">下楼梯（站在楼梯上）</span>
+                    </div>
+                </div>
+                <div class="legend">
+                    <h3>图例</h3>
+                    <div class="legend-grid">
+                        <span class="legend-item"><span class="sym player-sym">@</span> 玩家</span>
+                        <span class="legend-item"><span class="sym wall-sym">#</span> 墙壁</span>
+                        <span class="legend-item"><span class="sym floor-sym">.</span> 地板</span>
+                        <span class="legend-item"><span class="sym stair-sym">></span> 楼梯</span>
+                        <span class="legend-item"><span class="sym enemy-sym">g</span> 哥布林</span>
+                        <span class="legend-item"><span class="sym enemy-sym">s</span> 骷髅</span>
+                        <span class="legend-item"><span class="sym enemy-sym">o</span> 兽人</span>
+                        <span class="legend-item"><span class="sym enemy-sym">D</span> 恶龙</span>
+                        <span class="legend-item"><span class="sym potion-sym">!</span> 药水</span>
+                        <span class="legend-item"><span class="sym weapon-sym">)</span> 武器</span>
+                        <span class="legend-item"><span class="sym armor-sym">]</span> 护甲</span>
+                        <span class="legend-item"><span class="sym gold-sym">$</span> 金币</span>
+                    </div>
+                </div>
+                <button id="btn-back" class="menu-btn">返回</button>
+            </div>
+        </div>
+
+        <!-- 游戏画面 -->
+        <div id="game-screen" class="hidden">
+            <div id="top-bar">
+                <div id="player-info">
+                    <span id="player-name">勇者</span>
+                    <span id="floor-display">地牢 第1层</span>
+                </div>
+                <div id="stats-bar">
+                    <div class="stat">
+                        <span class="stat-label">HP</span>
+                        <div class="bar-container">
+                            <div id="hp-bar" class="bar hp"></div>
+                        </div>
+                        <span id="hp-text">100/100</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">XP</span>
+                        <div class="bar-container">
+                            <div id="xp-bar" class="bar xp"></div>
+                        </div>
+                        <span id="xp-text">0/20</span>
+                    </div>
+                    <div class="stat-inline">
+                        <span>Lv.<span id="level-text">1</span></span>
+                        <span>ATK:<span id="atk-text">5</span></span>
+                        <span>DEF:<span id="def-text">2</span></span>
+                        <span>金币:<span id="gold-text">0</span></span>
+                        <span>药水:<span id="potion-text">0</span></span>
+                    </div>
+                </div>
+            </div>
+            <div id="map-container">
+                <pre id="map-display"></pre>
+            </div>
+            <div id="message-log">
+                <div id="messages"></div>
+            </div>
+        </div>
+
+        <!-- 死亡画面 -->
+        <div id="death-screen" class="hidden">
+            <div class="death-content">
+                <h1 class="death-title">你死了</h1>
+                <div class="death-stats">
+                    <p>到达层数: <span id="death-floor">1</span></p>
+                    <p>等级: <span id="death-level">1</span></p>
+                    <p>击杀数: <span id="death-kills">0</span></p>
+                    <p>金币: <span id="death-gold">0</span></p>
+                </div>
+                <button id="btn-retry" class="menu-btn">再来一次</button>
+            </div>
+        </div>
+
+        <!-- 胜利画面 -->
+        <div id="win-screen" class="hidden">
+            <div class="win-content">
+                <h1 class="win-title">通关！</h1>
+                <p class="win-subtitle">你征服了深渊地牢！</p>
+                <div class="win-stats">
+                    <p>等级: <span id="win-level">1</span></p>
+                    <p>击杀数: <span id="win-kills">0</span></p>
+                    <p>金币: <span id="win-gold">0</span></p>
+                </div>
+                <button id="btn-win-retry" class="menu-btn">再来一次</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- ══ 帮助界面 ══ -->
-  <div id="help-screen" class="hidden">
-    <div class="help-content">
-      <h2>操作说明</h2>
-      <div class="help-grid">
-        <div class="help-section">
-          <h3>🎮 移动 &amp; 战斗</h3>
-          <p>↑ ↓ ← →  /  W A S D — 移动</p>
-          <p>向敌人方向移动 — 发动攻击</p>
-          <p>站在楼梯上 — 进入下一层</p>
-          <p>. / 空格 — 等待一回合</p>
-        </div>
-        <div class="help-section">
-          <h3>🎒 物品</h3>
-          <p>G — 拾取物品 / 商店购买</p>
-          <p>1-5 — 使用/装备背包物品</p>
-          <p>E — 快速装备最后一件装备</p>
-          <p>P — 神龛祈祷（花费 10 HP）</p>
-        </div>
-        <div class="help-section">
-          <h3>🗺️ 地图符号</h3>
-          <p>≡ — 楼梯（下一层）</p>
-          <p>▣ — 宝箱（走上去开启）</p>
-          <p>✦ — 神龛（P 键祈祷）</p>
-          <p>$ — 商店（G 键购买）</p>
-          <p>▲ — 陷阱（当心！）</p>
-          <p>🔥 — 火把（照亮周围）</p>
-        </div>
-        <div class="help-section">
-          <h3>💡 战略提示</h3>
-          <p>在睡眠敌人旁边行动不会唤醒远处的敌</p>
-          <p>盗贼对睡眠敌人必定暴击 ×3</p>
-          <p>高楼层有更强敌人和更好装备</p>
-          <p>第 5 层和第 10 层有 Boss！</p>
-        </div>
-      </div>
-      <button id="help-back-btn" class="btn-primary">← 返回</button>
-    </div>
-  </div>
-
-  <!-- ══ 职业选择 ══ -->
-  <div id="class-screen" class="hidden">
-    <div class="class-content">
-      <h2>选择你的职业</h2>
-      <p class="class-hint">每个职业都有独特的被动技能和起始装备</p>
-      <div class="class-grid">
-
-        <div class="class-card" data-class="warrior">
-          <div class="class-icon-big">⚔</div>
-          <h3 class="class-name">战士</h3>
-          <p class="class-flavor">钢铁意志的近战专家</p>
-          <div class="class-bars">
-            <div class="class-bar-row"><span>HP</span><div class="bar-fill" style="width:80%;background:#d04040"></div><span>40</span></div>
-            <div class="class-bar-row"><span>攻击</span><div class="bar-fill" style="width:56%;background:#e08040"></div><span>7</span></div>
-            <div class="class-bar-row"><span>防御</span><div class="bar-fill" style="width:64%;background:#4080d0"></div><span>4</span></div>
-          </div>
-          <div class="class-passive">
-            <span class="passive-label">被动</span>
-            <span>HP &lt; 30% 时攻击力 ×1.5</span>
-          </div>
-          <div class="class-start">
-            <span>起始：短剑 ⚔ + 皮甲 🛡</span>
-          </div>
-        </div>
-
-        <div class="class-card" data-class="rogue">
-          <div class="class-icon-big">🗡</div>
-          <h3 class="class-name">盗贼</h3>
-          <p class="class-flavor">行于暗影中的刺客</p>
-          <div class="class-bars">
-            <div class="class-bar-row"><span>HP</span><div class="bar-fill" style="width:50%;background:#d04040"></div><span>25</span></div>
-            <div class="class-bar-row"><span>攻击</span><div class="bar-fill" style="width:72%;background:#e08040"></div><span>9</span></div>
-            <div class="class-bar-row"><span>防御</span><div class="bar-fill" style="width:8%;background:#4080d0"></div><span>1</span></div>
-          </div>
-          <div class="class-passive">
-            <span class="passive-label">被动</span>
-            <span>对睡眠敌人必定暴击×3 · 25%闪避</span>
-          </div>
-          <div class="class-start">
-            <span>起始：匕首 🗡 + 传送卷轴 📜</span>
-          </div>
-        </div>
-
-        <div class="class-card" data-class="mage">
-          <div class="class-icon-big">🔮</div>
-          <h3 class="class-name">法师</h3>
-          <p class="class-flavor">掌控元素之力的智者</p>
-          <div class="class-bars">
-            <div class="class-bar-row"><span>HP</span><div class="bar-fill" style="width:44%;background:#d04040"></div><span>22</span></div>
-            <div class="class-bar-row"><span>攻击</span><div class="bar-fill" style="width:96%;background:#e08040"></div><span>12</span></div>
-            <div class="class-bar-row"><span>防御</span><div class="bar-fill" style="width:8%;background:#4080d0"></div><span>1</span></div>
-          </div>
-          <div class="class-passive">
-            <span class="passive-label">被动</span>
-            <span>减免受到伤害30% · 法术效果加倍</span>
-          </div>
-          <div class="class-start">
-            <span>起始：魔法杖 🪄 + 火球卷轴 ×2 📜</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ 主游戏界面 ══ -->
-  <div id="game-screen" class="hidden">
-    <div id="game-layout">
-
-      <!-- 左侧面板 -->
-      <div id="left-panel">
-        <div class="panel-section">
-          <div class="player-header">
-            <span id="player-class-icon">⚔</span>
-            <span id="player-name">勇者</span>
-            <span id="player-level-badge">Lv 1</span>
-          </div>
-          <div class="bar-label">HP</div>
-          <div class="bar-container">
-            <div id="hp-bar" class="bar hp-bar" style="width:100%"></div>
-            <span id="hp-text" class="bar-text">30/30</span>
-          </div>
-          <div class="bar-label">XP</div>
-          <div class="bar-container">
-            <div id="xp-bar" class="bar xp-bar" style="width:0%"></div>
-            <span id="xp-text" class="bar-text">0/12</span>
-          </div>
-          <div id="status-effects" class="status-row"></div>
-        </div>
-
-        <div class="panel-section">
-          <h3>属性</h3>
-          <div class="stat-row"><span class="stat-label">⚔ 攻击</span><span id="player-atk" class="stat-value">5</span></div>
-          <div class="stat-row"><span class="stat-label">🛡 防御</span><span id="player-def" class="stat-value">2</span></div>
-          <div class="stat-row"><span class="stat-label">💰 金币</span><span id="player-gold" class="stat-value">0</span></div>
-        </div>
-
-        <div class="panel-section">
-          <h3>装备</h3>
-          <div id="equipped-weapon" class="equip-slot">空手</div>
-          <div id="equipped-armor"  class="equip-slot">布衣</div>
-        </div>
-
-        <div class="panel-section inv-panel">
-          <h3>背包 <span class="hint">(1-5)</span></h3>
-          <div id="inventory-list"></div>
-        </div>
-
-        <div class="panel-section perk-panel">
-          <h3>天赋</h3>
-          <div id="perk-list"></div>
-        </div>
-      </div>
-
-      <!-- 中央画布 -->
-      <div id="center-panel">
-        <div id="floor-info">
-          <span id="floor-text">第 1 层</span>
-          <button id="mute-btn" class="btn-icon" title="静音">🔊</button>
-          <span id="turn-text">回合 1</span>
-        </div>
-        <canvas id="game-canvas" width="640" height="640"></canvas>
-        <div id="canvas-hint">? 帮助 &nbsp;|&nbsp; WASD/方向键 移动 &nbsp;|&nbsp; 撞击攻击 &nbsp;|&nbsp; G 拾取</div>
-      </div>
-
-      <!-- 右侧面板 -->
-      <div id="right-panel">
-        <div class="panel-section minimap-section">
-          <h3>小地图</h3>
-          <canvas id="minimap-canvas" width="160" height="160"></canvas>
-        </div>
-        <div class="panel-section log-section">
-          <h3>消息日志</h3>
-          <div id="message-log"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ══ 天赋选择模态框 ══ -->
-  <div id="perk-modal" class="hidden modal-overlay">
-    <div class="modal-box perk-modal-box">
-      <h2>🌟 升级！选择一个天赋</h2>
-      <p class="modal-hint">选择一个永久被动技能</p>
-      <div id="perk-options" class="perk-grid"></div>
-    </div>
-  </div>
-
-  <!-- ══ 游戏内帮助叠层 ══ -->
-  <div id="ingame-help" class="hidden modal-overlay" onclick="this.classList.add('hidden')">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h2>操作说明 <span style="font-size:10px;color:#666">(点击外部关闭)</span></h2>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:8px;color:#a0a090;line-height:2">
-        <div>WASD / 方向键 — 移动<br>G — 拾取 / 购买<br>1-5 — 使用背包物品<br>E — 快速装备</div>
-        <div>P — 神龛祈祷<br>. / 空格 — 等待<br>? — 显示/隐藏帮助<br>🔊 — 静音切换</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ 游戏结束界面 ══ -->
-  <div id="gameover-screen" class="hidden">
-    <div class="gameover-content">
-      <h2 id="gameover-title">你已陨落</h2>
-      <div id="gameover-stats"></div>
-      <div id="high-scores"></div>
-      <div class="gameover-buttons">
-        <button id="restart-btn" class="btn-primary">⚔ 再次冒险</button>
-        <button id="menu-btn" class="btn-secondary">↩ 返回主菜单</button>
-      </div>
-    </div>
-  </div>
-
-</div><!-- #app -->
-
-<script src="src/utils.js"></script>
-<script src="src/audio.js"></script>
-<script src="src/particles.js"></script>
-<script src="src/dungeon.js"></script>
-<script src="src/entities.js"></script>
-<script src="src/items.js"></script>
-<script src="src/combat.js"></script>
-<script src="src/renderer.js"></script>
-<script src="src/ui.js"></script>
-<script src="src/game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
