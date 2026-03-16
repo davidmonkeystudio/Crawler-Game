@@ -711,6 +711,75 @@
         }
     }
 
+    // ---- 触控处理 ----
+    function handleTouchAction(action) {
+        if (document.getElementById('game-screen').classList.contains('hidden')) return;
+        if (state.gameOver) {
+            showDeath();
+            return;
+        }
+
+        switch (action) {
+            case 'up': tryMove(0, -1); break;
+            case 'down': tryMove(0, 1); break;
+            case 'left': tryMove(-1, 0); break;
+            case 'right': tryMove(1, 0); break;
+            case 'pickup': tryPickup(); break;
+            case 'potion': usePotion(); break;
+            case 'descend': tryDescend(); break;
+            case 'wait': waitTurn(); break;
+        }
+    }
+
+    function initTouchControls() {
+        const buttons = document.querySelectorAll('#touch-controls .touch-btn');
+        buttons.forEach(btn => {
+            const action = btn.dataset.action;
+            if (!action) return;
+
+            // 用 touchstart 而不是 click，响应更快
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleTouchAction(action);
+            });
+            // 也保留 click 以兼容鼠标
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleTouchAction(action);
+            });
+        });
+    }
+
+    // ---- 滑动手势 ----
+    function initSwipeGesture() {
+        let startX = 0, startY = 0;
+        const mapContainer = document.getElementById('map-container');
+        const SWIPE_THRESHOLD = 30;
+
+        mapContainer.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        mapContainer.addEventListener('touchend', (e) => {
+            if (document.getElementById('game-screen').classList.contains('hidden')) return;
+            if (state.gameOver) { showDeath(); return; }
+
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+
+            if (Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
+
+            if (absDx > absDy) {
+                tryMove(dx > 0 ? 1 : -1, 0);
+            } else {
+                tryMove(0, dy > 0 ? 1 : -1);
+            }
+        }, { passive: true });
+    }
+
     // ---- 初始化 ----
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-start').addEventListener('click', startGame);
@@ -719,6 +788,8 @@
         document.getElementById('btn-retry').addEventListener('click', startGame);
         document.getElementById('btn-win-retry').addEventListener('click', startGame);
         document.addEventListener('keydown', handleKeyDown);
+        initTouchControls();
+        initSwipeGesture();
     });
 
 })();

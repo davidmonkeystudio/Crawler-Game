@@ -10,12 +10,16 @@ body {
     font-family: 'Courier New', 'Consolas', monospace;
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #game-container {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -155,6 +159,7 @@ body {
     flex-direction: column;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
 }
 
 #top-bar {
@@ -311,11 +316,132 @@ body {
     text-align: center;
 }
 
+/* 触控按钮 - 默认隐藏，手机上显示 */
+#touch-controls {
+    display: none;
+    flex-shrink: 0;
+    background: #0d0d14;
+    border-top: 1px solid #333;
+    padding: 6px 0;
+    text-align: center;
+}
+
+.touch-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.touch-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+    font-family: inherit;
+    background: #1a1a2e;
+    color: #ff9944;
+    border: 1px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.touch-btn:active {
+    background: #ff6600;
+    color: #0a0a0f;
+    transform: scale(0.92);
+}
+
+.touch-center {
+    font-size: 1rem;
+}
+
+.touch-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.touch-action {
+    width: auto;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
     .game-title { font-size: 2.5rem; }
-    #map-display { font-size: 12px; }
     .bar-container { width: 80px; }
-    #message-log { height: 80px; }
     .stat-inline { gap: 0.8em; font-size: 0.8rem; }
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    #touch-controls {
+        display: block;
+    }
+
+    #map-display {
+        font-size: 9px;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+    }
+
+    #message-log {
+        height: 48px;
+        padding: 4px 8px;
+    }
+
+    #messages { font-size: 0.75rem; }
+
+    #top-bar {
+        padding: 4px 8px;
+    }
+
+    #player-name { font-size: 0.9rem; }
+    #floor-display { font-size: 0.85rem; }
+
+    .bar-container {
+        width: 60px;
+        height: 10px;
+    }
+
+    .stat-label { font-size: 0.75rem; }
+
+    .stat-inline {
+        gap: 0.5em;
+        font-size: 0.7rem;
+    }
+
+    .menu-btn {
+        padding: 1em 3em;
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-height: 600px) {
+    #map-display {
+        font-size: 7px;
+        line-height: 1.1;
+    }
+
+    #message-log { height: 36px; }
+
+    .touch-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .touch-action {
+        height: 34px;
+        font-size: 0.75rem;
+    }
 }
