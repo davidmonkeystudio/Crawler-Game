@@ -1,7 +1,7 @@
 // ==========================================
-//  深渊地牢 - Roguelike 地牢爬行者 v2.0
-//  大型升级版：陷阱、宝箱、状态效果、稀有度、
-//  Boss战、商店、暴击闪避、存档系统
+//  深渊地牢 - Roguelike 地牢爬行者 v2.1
+//  技能系统、地牢主题、成就、视觉特效、
+//  陷阱、宝箱、Boss战、商店、稀有装备
 // ==========================================
 
 (function () {
@@ -114,10 +114,193 @@
         { name: '解毒剂', type: 'antidote', cost: 15, desc: '清除负面效果' },
     ];
 
+    // ---- 技能系统 ----
+    const SKILLS = {
+        fireball: {
+            name: '火球术', key: '1', cost: 0, cooldown: 5, range: 4,
+            desc: '对范围内敌人造成火焰伤害',
+            execute(p) {
+                const enemies = state.enemies.filter(e => {
+                    const dist = Math.abs(e.x - p.x) + Math.abs(e.y - p.y);
+                    return dist <= 4 && state.visible[e.y][e.x];
+                });
+                if (enemies.length === 0) {
+                    addMessage('范围内没有敌人！', 'msg-info');
+                    return false;
+                }
+                screenFlash('#ff440066');
+                for (const e of enemies) {
+                    const dmg = 10 + p.level * 3;
+                    e.hp -= dmg;
+                    applyStatusEffect(e, 'BURN', e.name);
+                    addMessage(`火球击中了 ${e.name}，造成 ${dmg} 点伤害！`, 'msg-combat');
+                    if (e.hp <= 0) {
+                        addMessage(`${e.name} 被火球烧死了！`, 'msg-combat');
+                        p.xp += e.xp;
+                        p.gold += e.gold || 0;
+                        p.kills++;
+                    }
+                }
+                state.enemies = state.enemies.filter(e => e.hp > 0);
+                return true;
+            }
+        },
+        heal: {
+            name: '治愈术', key: '2', cost: 0, cooldown: 8, range: 0,
+            desc: '恢复大量生命值并清除负面效果',
+            execute(p) {
+                const heal = Math.floor(p.maxHp * 0.4);
+                const actual = Math.min(heal, p.maxHp - p.hp);
+                p.hp += actual;
+                // 清除负面效果
+                p.statusEffects = p.statusEffects.filter(e =>
+                    e.name === '再生' || e.name === '护盾');
+                screenFlash('#00ff4466');
+                addMessage(`治愈术恢复了 ${actual} 点生命并清除负面效果！`, 'msg-heal');
+                return true;
+            }
+        },
+        blink: {
+            name: '闪现', key: '3', cost: 0, cooldown: 6, range: 5,
+            desc: '瞬间传送到视野内的空地',
+            execute(p) {
+                // 传送到离最近敌人最远的可见空地
+                let bestX = p.x, bestY = p.y, bestDist = 0;
+                for (let y = 0; y < MAP_H; y++) {
+                    for (let x = 0; x < MAP_W; x++) {
+                        if (!state.visible[y][x]) continue;
+                        if (state.map[y][x] === TILE.WALL) continue;
+                        if (state.enemies.some(e => e.x === x && e.y === y)) continue;
+                        const playerDist = Math.abs(x - p.x) + Math.abs(y - p.y);
+                        if (playerDist > 5 || playerDist === 0) continue;
+                        // 离所有敌人的最小距离
+                        let minEnemyDist = 999;
+                        for (const e of state.enemies) {
+                            const ed = Math.abs(e.x - x) + Math.abs(e.y - y);
+                            if (ed < minEnemyDist) minEnemyDist = ed;
+                        }
+                        if (minEnemyDist > bestDist) {
+                            bestDist = minEnemyDist;
+                            bestX = x;
+                            bestY = y;
+                        }
+                    }
+                }
+                if (bestX === p.x && bestY === p.y) {
+                    addMessage('没有合适的传送目标！', 'msg-info');
+                    return false;
+                }
+                p.x = bestX;
+                p.y = bestY;
+                screenFlash('#4488ff66');
+                addMessage('你闪现到了安全的位置！', 'msg-item');
+                return true;
+            }
+        },
+    };
+
+    // ---- 地牢主题 ----
+    const DUNGEON_THEMES = {
+        crypt: {
+            name: '阴暗墓穴', floors: [1, 2, 3],
+            wallColor: '#444455', floorColor: '#1a1a22',
+            ambientMsg: '墓穴中回荡着幽幽的风声...',
+        },
+        sewer: {
+            name: '腐臭下水道', floors: [4, 5],
+            wallColor: '#335533', floorColor: '#1a221a',
+            ambientMsg: '污水在脚下流淌...',
+        },
+        lava: {
+            name: '熔岩洞窟', floors: [6, 7],
+            wallColor: '#553322', floorColor: '#221a15',
+            ambientMsg: '灼热的气浪扑面而来...',
+        },
+        void: {
+            name: '虚空深渊', floors: [8, 9, 10],
+            wallColor: '#332244', floorColor: '#15101a',
+            ambientMsg: '虚无的力量在周围涌动...',
+        },
+    };
+
+    function getTheme(floor) {
+        for (const theme of Object.values(DUNGEON_THEMES)) {
+            if (theme.floors.includes(floor)) return theme;
+        }
+        return DUNGEON_THEMES.crypt;
+    }
+
+    // ---- 成就系统 ----
+    const ACHIEVEMENTS = [
+        { id: 'first_kill', name: '初出茅庐', desc: '击杀第一个怪物', check: p => p.kills >= 1, reward: '暴击+2%' },
+        { id: 'killer_10', name: '杀手本能', desc: '击杀10个怪物', check: p => p.kills >= 10, reward: 'ATK+2' },
+        { id: 'killer_50', name: '死神降临', desc: '击杀50个怪物', check: p => p.kills >= 50, reward: 'ATK+5' },
+        { id: 'rich', name: '财大气粗', desc: '拥有200金币', check: p => p.gold >= 200, reward: '商店9折' },
+        { id: 'survivor', name: '百死不悔', desc: '累计受到500点伤害', check: p => p.totalDmgTaken >= 500, reward: 'HP+30' },
+        { id: 'boss_slayer', name: 'Boss杀手', desc: '击杀第一个Boss', check: p => p.bossesKilled >= 1, reward: '所有属性+1' },
+        { id: 'floor5', name: '深入虎穴', desc: '到达第5层', check: (p, s) => s.floor >= 5, reward: 'DEF+3' },
+        { id: 'floor10', name: '深渊探索者', desc: '到达第10层', check: (p, s) => s.floor >= 10, reward: '暴击+5%' },
+        { id: 'chest_5', name: '宝箱猎人', desc: '打开5个宝箱', check: p => p.chestsOpened >= 5, reward: '钥匙+2' },
+        { id: 'level10', name: '传奇勇者', desc: '达到10级', check: p => p.level >= 10, reward: 'HP+50' },
+    ];
+
+    function checkAchievements() {
+        const p = state.player;
+        if (!p.achievements) p.achievements = [];
+
+        for (const ach of ACHIEVEMENTS) {
+            if (p.achievements.includes(ach.id)) continue;
+            if (ach.check(p, state)) {
+                p.achievements.push(ach.id);
+                addMessage(`★ 成就解锁：${ach.name} — ${ach.desc}！`, 'msg-level');
+                addMessage(`  奖励：${ach.reward}`, 'msg-level');
+                applyAchievementReward(ach.id);
+                screenFlash('#ffcc0044');
+            }
+        }
+    }
+
+    function applyAchievementReward(id) {
+        const p = state.player;
+        switch (id) {
+            case 'first_kill': p.critChance += 2; break;
+            case 'killer_10': p.atk += 2; break;
+            case 'killer_50': p.atk += 5; break;
+            case 'rich': p.shopDiscount = 0.9; break;
+            case 'survivor': p.maxHp += 30; p.hp += 30; break;
+            case 'boss_slayer': p.atk += 1; p.def += 1; p.maxHp += 10; p.hp += 10; break;
+            case 'floor5': p.def += 3; break;
+            case 'floor10': p.critChance += 5; break;
+            case 'chest_5': p.keys += 2; break;
+            case 'level10': p.maxHp += 50; p.hp += 50; break;
+        }
+    }
+
+    // ---- 视觉特效 ----
+    function screenFlash(color) {
+        const el = document.getElementById('flash-overlay');
+        if (!el) return;
+        el.style.backgroundColor = color;
+        el.style.opacity = '1';
+        el.classList.remove('hidden');
+        setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => el.classList.add('hidden'), 300);
+        }, 100);
+    }
+
+    function screenShake() {
+        const container = document.getElementById('map-container');
+        if (!container) return;
+        container.classList.add('shake');
+        setTimeout(() => container.classList.remove('shake'), 200);
+    }
+
     // ---- 游戏状态 ----
     let state = {};
     let shopOpen = false;
     let shopItems = [];
+    let autoResting = false;
 
     function initState() {
         state = {
@@ -145,6 +328,13 @@
                 bossesKilled: 0,
                 chestsOpened: 0,
                 trapsTriggered: 0,
+                achievements: [],
+                shopDiscount: 1.0,
+                skills: {
+                    fireball: { cooldown: 0, unlocked: true },
+                    heal: { cooldown: 0, unlocked: true },
+                    blink: { cooldown: 0, unlocked: true },
+                },
             },
             enemies: [],
             items: [],
@@ -1075,13 +1265,16 @@
         const item = shopItems[index];
         if (!item) return;
 
-        if (p.gold < item.cost) {
+        const discount = p.shopDiscount || 1.0;
+        const actualCost = Math.floor(item.cost * discount);
+
+        if (p.gold < actualCost) {
             addMessage('金币不足！', 'msg-danger');
             renderShop();
             return;
         }
 
-        p.gold -= item.cost;
+        p.gold -= actualCost;
 
         switch (item.type) {
             case 'potion':
@@ -1117,8 +1310,117 @@
         render();
     }
 
+    // ---- 技能使用 ----
+    function useSkill(skillId) {
+        if (state.gameOver || shopOpen) return;
+        const p = state.player;
+        const skillState = p.skills[skillId];
+        const skillDef = SKILLS[skillId];
+
+        if (!skillState || !skillState.unlocked) {
+            addMessage('技能尚未解锁！', 'msg-info');
+            return;
+        }
+
+        if (skillState.cooldown > 0) {
+            addMessage(`${skillDef.name} 冷却中（${skillState.cooldown}回合）`, 'msg-info');
+            render();
+            return;
+        }
+
+        if (isStunned(p)) {
+            addMessage('你处于眩晕状态，无法使用技能！', 'msg-danger');
+            render();
+            return;
+        }
+
+        const success = skillDef.execute(p);
+        if (success) {
+            skillState.cooldown = skillDef.cooldown;
+            // 减少所有其他技能CD
+            processStatusEffects(p, '你');
+            moveEnemies();
+            computeFOV(p.x, p.y);
+            p.turnCount++;
+            checkAchievements();
+        }
+        render();
+    }
+
+    function tickSkillCooldowns() {
+        const p = state.player;
+        for (const key of Object.keys(p.skills)) {
+            if (p.skills[key].cooldown > 0) {
+                p.skills[key].cooldown--;
+            }
+        }
+    }
+
+    // ---- 自动休息 ----
+    function autoRest() {
+        if (state.gameOver) return;
+        const p = state.player;
+
+        // 检查是否有敌人在视野内
+        const visibleEnemies = state.enemies.filter(e =>
+            state.visible[e.y] && state.visible[e.y][e.x]);
+        if (visibleEnemies.length > 0) {
+            addMessage('附近有敌人，无法休息！', 'msg-danger');
+            autoResting = false;
+            render();
+            return;
+        }
+
+        if (p.hp >= p.maxHp) {
+            addMessage('你已经完全恢复了。', 'msg-info');
+            autoResting = false;
+            render();
+            return;
+        }
+
+        autoResting = true;
+        addMessage('开始休息...（按任意键中断）', 'msg-info');
+
+        function restTick() {
+            if (!autoResting || state.gameOver) return;
+            if (p.hp >= p.maxHp) {
+                addMessage('休息完毕，完全恢复！', 'msg-heal');
+                autoResting = false;
+                render();
+                return;
+            }
+
+            // 检查敌人
+            const nearby = state.enemies.filter(e => {
+                const dist = Math.abs(e.x - p.x) + Math.abs(e.y - p.y);
+                return dist <= FOV_RADIUS + 2;
+            });
+            if (nearby.length > 0) {
+                addMessage('休息被打断——附近有敌人！', 'msg-danger');
+                autoResting = false;
+                render();
+                return;
+            }
+
+            p.hp = Math.min(p.hp + 3, p.maxHp);
+            processStatusEffects(p, '你');
+            tickSkillCooldowns();
+            p.turnCount++;
+            moveEnemies();
+            computeFOV(p.x, p.y);
+            render();
+
+            if (autoResting) {
+                setTimeout(restTick, 50);
+            }
+        }
+
+        setTimeout(restTick, 50);
+    }
+
     // ---- 玩家操作 ----
     function tryMove(dx, dy) {
+        autoResting = false;
         if (state.gameOver || shopOpen) return;
 
         const p = state.player;
@@ -1143,6 +1445,7 @@
         const enemy = state.enemies.find(e => e.x === nx && e.y === ny);
         if (enemy) {
             playerAttack(enemy);
+            screenShake();
         } else {
             p.x = nx;
             p.y = ny;
@@ -1153,11 +1456,13 @@
 
         // 处理玩家状态效果
         processStatusEffects(p, '你');
+        tickSkillCooldowns();
 
         if (!state.gameOver) {
             moveEnemies();
             computeFOV(p.x, p.y);
             p.turnCount++;
+            checkAchievements();
         }
 
         // 自动保存
@@ -1281,7 +1586,9 @@
             return;
         }
 
-        addMessage(`你进入了地牢第 ${state.floor} 层...`, 'msg-info');
+        const theme = getTheme(state.floor);
+        addMessage(`你进入了地牢第 ${state.floor} 层 — ${theme.name}`, 'msg-info');
+        addMessage(theme.ambientMsg, 'msg-info');
         if (BOSS_DEFS[state.floor]) {
             addMessage(`⚠ 你感到一股强大的气息...这层有BOSS！`, 'msg-danger');
         }
@@ -1304,10 +1611,11 @@
 
     // ---- 渲染 ----
     function getColorForTile(ch, isVisible) {
+        const theme = getTheme(state.floor);
         if (!isVisible) return 'color:#333';
         switch (ch) {
-            case TILE.WALL: return 'color:#555';
-            case TILE.FLOOR: return 'color:#2a2a2a';
+            case TILE.WALL: return `color:${theme.wallColor}`;
+            case TILE.FLOOR: return `color:${theme.floorColor}`;
             case TILE.STAIRS: return 'color:#ffff00;font-weight:bold';
             case '@': return 'color:#00ff88;font-weight:bold';
             case '!': return 'color:#ff66cc';
@@ -1447,6 +1755,31 @@
             hpBar.style.background = 'linear-gradient(90deg, #cc0000, #ff3333)';
         }
 
+        // 技能栏
+        const skillBar = document.getElementById('skill-bar');
+        if (skillBar) {
+            let skillHtml = '';
+            for (const [key, skillDef] of Object.entries(SKILLS)) {
+                const s = p.skills[key];
+                if (!s || !s.unlocked) continue;
+                const ready = s.cooldown === 0;
+                const cdText = ready ? '就绪' : `CD:${s.cooldown}`;
+                skillHtml += `<span class="skill-slot ${ready ? 'skill-ready' : 'skill-cd'}" title="${skillDef.desc}">` +
+                    `[${skillDef.key}]${skillDef.name} ${cdText}</span>`;
+            }
+            skillBar.innerHTML = skillHtml;
+        }
+
+        // 迷你地图
+        renderMinimap();
+
+        // 地牢主题名
+        const themeEl = document.getElementById('theme-name');
+        if (themeEl) {
+            const theme = getTheme(state.floor);
+            themeEl.textContent = theme.name;
+        }
+
         // 更新消息日志
         const msgsEl = document.getElementById('messages');
         msgsEl.innerHTML = state.messages.slice(-10).map(m =>
@@ -1487,6 +1820,66 @@
             btn.addEventListener('click', () => buyItem(parseInt(btn.dataset.index)));
         });
         document.getElementById('shop-close-btn').addEventListener('click', closeShop);
+    }
+
+    // ---- 迷你地图 ----
+    function renderMinimap() {
+        const canvas = document.getElementById('minimap');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const scale = 2;
+        canvas.width = MAP_W * scale;
+        canvas.height = MAP_H * scale;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let y = 0; y < MAP_H; y++) {
+            for (let x = 0; x < MAP_W; x++) {
+                if (!state.revealed[y][x]) continue;
+
+                if (state.visible[y][x]) {
+                    if (state.map[y][x] === TILE.WALL) {
+                        ctx.fillStyle = '#444';
+                    } else if (state.map[y][x] === TILE.STAIRS) {
+                        ctx.fillStyle = '#ffff00';
+                    } else {
+                        ctx.fillStyle = '#222';
+                    }
+                } else {
+                    ctx.fillStyle = '#1a1a1a';
+                }
+                ctx.fillRect(x * scale, y * scale, scale, scale);
+            }
+        }
+
+        // 怪物（仅可见的）
+        for (const e of state.enemies) {
+            if (state.visible[e.y] && state.visible[e.y][e.x]) {
+                ctx.fillStyle = e.isBoss ? '#ff00ff' : '#ff4444';
+                ctx.fillRect(e.x * scale, e.y * scale, scale, scale);
+            }
+        }
+
+        // 宝箱
+        for (const c of state.chests) {
+            if (state.visible[c.y] && state.visible[c.y][c.x]) {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillRect(c.x * scale, c.y * scale, scale, scale);
+            }
+        }
+
+        // 商店
+        for (const s of state.shops) {
+            if (state.visible[s.y] && state.visible[s.y][s.x]) {
+                ctx.fillStyle = '#00ffff';
+                ctx.fillRect(s.x * scale, s.y * scale, scale, scale);
+            }
+        }
+
+        // 玩家（闪烁绿点）
+        ctx.fillStyle = '#00ff88';
+        ctx.fillRect(state.player.x * scale, state.player.y * scale, scale + 1, scale + 1);
     }
 
     // ---- 画面切换 ----
@@ -1591,9 +1984,11 @@
     function startGame() {
         initState();
         generateFloor();
-        addMessage('你进入了深渊地牢的第 1 层...', 'msg-info');
+        const theme = getTheme(1);
+        addMessage(`你进入了深渊地牢的第 1 层 — ${theme.name}`, 'msg-info');
+        addMessage(theme.ambientMsg, 'msg-info');
         addMessage('WASD移动 | E拾取/开箱/商店 | Q药水 | >下楼', 'msg-info');
-        addMessage('小心陷阱！探索宝箱获取强力装备！', 'msg-info');
+        addMessage('技能：[1]火球 [2]治愈 [3]闪现 | R休息', 'msg-info');
         showGame();
         render();
     }
@@ -1631,6 +2026,13 @@
                 return;
             }
 
+            // 任何按键中断自动休息
+            if (autoResting) {
+                autoResting = false;
+                e.preventDefault();
+                return;
+            }
+
             switch (e.key) {
                 case 'w': case 'W': case 'ArrowUp':
                     e.preventDefault(); tryMove(0, -1); break;
@@ -1650,6 +2052,14 @@
                     e.preventDefault(); waitTurn(); break;
                 case 'S':
                     e.preventDefault(); saveGame(); render(); break;
+                case 'r': case 'R':
+                    e.preventDefault(); autoRest(); break;
+                case '1':
+                    e.preventDefault(); useSkill('fireball'); break;
+                case '2':
+                    e.preventDefault(); useSkill('heal'); break;
+                case '3':
+                    e.preventDefault(); useSkill('blink'); break;
             }
         }
     }
@@ -1672,6 +2082,10 @@
             case 'potion': usePotion(); break;
             case 'descend': tryDescend(); break;
             case 'wait': waitTurn(); break;
+            case 'rest': autoRest(); break;
+            case 'skill1': useSkill('fireball'); break;
+            case 'skill2': useSkill('heal'); break;
+            case 'skill3': useSkill('blink'); break;
         }
     }
 

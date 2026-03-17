@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0f">
-    <title>深渊地牢 - Roguelike 地牢爬行者 v2.0</title>
+    <title>深渊地牢 - Roguelike 地牢爬行者 v2.1</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
@@ -23,8 +23,8 @@
         <div id="title-screen">
             <div class="title-content">
                 <h1 class="game-title">深渊地牢</h1>
-                <p class="game-subtitle">Abyss Dungeon Crawler v2.0</p>
-                <div class="version-features">陷阱 · 宝箱 · Boss战 · 商店 · 稀有装备</div>
+                <p class="game-subtitle">Abyss Dungeon Crawler v2.1</p>
+                <div class="version-features">技能 · 成就 · 主题 · 陷阱 · 宝箱 · Boss战 · 商店</div>
                 <div class="title-art">
                     ⚔️ 🏰 💀
                 </div>
@@ -63,6 +63,14 @@
                     <div class="help-item">
                         <span class="key">Shift+S</span>
                         <span class="desc">手动保存</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">R</span>
+                        <span class="desc">原地休息（回满血）</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">1 / 2 / 3</span>
+                        <span class="desc">技能：火球 / 治愈 / 闪现</span>
                     </div>
                 </div>
                 <div class="legend">
@@ -105,6 +113,7 @@
                 <div id="player-info">
                     <span id="player-name">勇者</span>
                     <span id="floor-display">地牢 第1层</span>
+                    <span id="theme-name" style="color:#666;font-size:0.8em"></span>
                 </div>
                 <div id="stats-bar">
                     <div class="stat">
@@ -136,8 +145,11 @@
                     </div>
                 </div>
             </div>
+            <div id="skill-bar"></div>
             <div id="map-container">
                 <pre id="map-display"></pre>
+                <canvas id="minimap"></canvas>
+                <div id="flash-overlay" class="hidden"></div>
             </div>
             <div id="message-log">
                 <div id="messages"></div>
@@ -163,6 +175,12 @@
                     <button class="touch-btn touch-action" data-action="pickup">拾取</button>
                     <button class="touch-btn touch-action" data-action="potion">药水</button>
                     <button class="touch-btn touch-action" data-action="descend">下楼</button>
+                    <button class="touch-btn touch-action" data-action="rest">休息</button>
+                </div>
+                <div class="touch-actions" style="margin-top:4px">
+                    <button class="touch-btn touch-action touch-skill" data-action="skill1">火球</button>
+                    <button class="touch-btn touch-action touch-skill" data-action="skill2">治愈</button>
+                    <button class="touch-btn touch-action touch-skill" data-action="skill3">闪现</button>
                 </div>
             </div>
         </div>

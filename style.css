@@ -262,6 +262,33 @@ body {
     animation: pulse 2s infinite;
 }
 
+/* 技能栏 */
+#skill-bar {
+    display: flex;
+    gap: 0.8em;
+    padding: 4px 1em;
+    background: #0d0d18;
+    border-bottom: 1px solid #222;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.skill-slot {
+    padding: 2px 8px;
+    border: 1px solid #333;
+    border-radius: 3px;
+}
+
+.skill-ready {
+    color: #44ccff;
+    border-color: #44ccff55;
+}
+
+.skill-cd {
+    color: #555;
+    border-color: #333;
+}
+
 #map-container {
     flex: 1;
     display: flex;
@@ -269,6 +296,39 @@ body {
     align-items: center;
     overflow: hidden;
     background: #08080e;
+    position: relative;
+}
+
+/* 迷你地图 */
+#minimap {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    border: 1px solid #333;
+    opacity: 0.7;
+    pointer-events: none;
+    image-rendering: pixelated;
+}
+
+/* 闪光特效 */
+#flash-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+/* 屏幕震动 */
+@keyframes shakeAnim {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-3px, 2px); }
+    50% { transform: translate(3px, -2px); }
+    75% { transform: translate(-2px, -1px); }
+}
+
+.shake {
+    animation: shakeAnim 0.2s ease;
 }
 
 #map-display {
@@ -522,6 +582,11 @@ body {
     padding: 0 16px;
     font-size: 0.85rem;
     letter-spacing: 0.05em;
+}
+
+.touch-skill {
+    border-color: #44ccff55;
+    color: #44ccff;
 }
 
 /* 响应式 */
