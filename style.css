@@ -38,6 +38,16 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@keyframes bossGlow {
+    0%, 100% { text-shadow: 0 0 10px #ff00ff44; }
+    50% { text-shadow: 0 0 20px #ff00ff88, 0 0 40px #ff00ff44; }
+}
+
 .game-title {
     font-size: 4rem;
     color: #ff6600;
@@ -49,7 +59,14 @@ body {
 .game-subtitle {
     font-size: 1.2rem;
     color: #888;
-    margin-bottom: 2em;
+    margin-bottom: 0.5em;
+}
+
+.version-features {
+    font-size: 0.85rem;
+    color: #ff9944;
+    margin-bottom: 1.5em;
+    letter-spacing: 0.1em;
 }
 
 .title-art {
@@ -85,6 +102,7 @@ body {
     align-items: center;
     width: 100vw;
     height: 100vh;
+    overflow-y: auto;
 }
 
 .help-content {
@@ -128,7 +146,7 @@ body {
 
 .legend-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0.3em;
 }
 
@@ -148,10 +166,15 @@ body {
 .floor-sym { color: #333; }
 .stair-sym { color: #ffff00; }
 .enemy-sym { color: #ff4444; }
+.boss-sym { color: #ff00ff; }
 .potion-sym { color: #ff66cc; }
 .weapon-sym { color: #66aaff; }
 .armor-sym { color: #88ff88; }
 .gold-sym { color: #ffdd00; }
+.key-sym { color: #ffaa00; }
+.chest-sym { color: #ffcc00; }
+.shop-sym { color: #00ffff; }
+.trap-sym { color: #ff4444; }
 
 /* 游戏画面 */
 #game-screen {
@@ -225,10 +248,18 @@ body {
     gap: 1.2em;
     font-size: 0.9rem;
     color: #aaa;
+    flex-wrap: wrap;
 }
 
 .stat-inline span {
     white-space: nowrap;
+}
+
+/* 状态效果徽章 */
+.status-badge {
+    font-size: 0.85rem;
+    margin-left: 4px;
+    animation: pulse 2s infinite;
 }
 
 #map-container {
@@ -268,6 +299,61 @@ body {
 .msg-danger { color: #ff2222; }
 .msg-heal { color: #44ff88; }
 
+/* 商店覆盖层 */
+#shop-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+#shop-content {
+    background: #111122;
+    border: 2px solid #00ffff;
+    padding: 1.5em 2em;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.shop-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0.5em 0;
+    padding: 0.5em;
+    border: 1px solid #333;
+}
+
+.shop-item.shop-disabled {
+    opacity: 0.4;
+}
+
+.shop-buy-btn {
+    background: #1a1a2e;
+    color: #00ffff;
+    border: 1px solid #00aaaa;
+    padding: 0.5em 1em;
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.shop-buy-btn:hover:not(:disabled) {
+    background: #00aaaa;
+    color: #000;
+}
+
+.shop-buy-btn:disabled {
+    cursor: not-allowed;
+    color: #555;
+    border-color: #333;
+}
+
 /* 死亡画面 */
 #death-screen {
     display: flex;
@@ -292,6 +378,13 @@ body {
     text-align: center;
 }
 
+.score-line {
+    font-size: 1.4rem;
+    color: #ffcc00;
+    margin-top: 0.5em;
+    font-weight: bold;
+}
+
 /* 胜利画面 */
 #win-screen {
     display: flex;
@@ -314,6 +407,61 @@ body {
     font-size: 1.2rem;
     margin-bottom: 1em;
     text-align: center;
+}
+
+/* 排行榜画面 */
+#scores-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+.scores-content {
+    max-width: 500px;
+    width: 90%;
+    padding: 2em;
+}
+
+.scores-title {
+    font-size: 2.5rem;
+    color: #ffcc00;
+    text-shadow: 0 0 15px #ffcc0044;
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+.score-entry {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    padding: 0.6em 0.5em;
+    border-bottom: 1px solid #222;
+    align-items: center;
+}
+
+.score-rank {
+    color: #ff9944;
+    font-weight: bold;
+    min-width: 2em;
+}
+
+.score-value {
+    color: #ffcc00;
+    font-weight: bold;
+    min-width: 5em;
+}
+
+.score-detail {
+    color: #aaa;
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.score-date {
+    color: #555;
+    font-size: 0.8rem;
 }
 
 /* 触控按钮 - 默认隐藏，手机上显示 */
@@ -381,6 +529,7 @@ body {
     .game-title { font-size: 2.5rem; }
     .bar-container { width: 80px; }
     .stat-inline { gap: 0.8em; font-size: 0.8rem; }
+    .legend-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 768px), (pointer: coarse) {
@@ -423,6 +572,11 @@ body {
     .menu-btn {
         padding: 1em 3em;
         font-size: 1.2rem;
+    }
+
+    #shop-content {
+        padding: 1em;
+        font-size: 0.9rem;
     }
 }
 

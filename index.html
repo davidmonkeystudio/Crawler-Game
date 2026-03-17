@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0f">
-    <title>深渊地牢 - Roguelike 地牢爬行者</title>
+    <title>深渊地牢 - Roguelike 地牢爬行者 v2.0</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
@@ -23,12 +23,15 @@
         <div id="title-screen">
             <div class="title-content">
                 <h1 class="game-title">深渊地牢</h1>
-                <p class="game-subtitle">Abyss Dungeon Crawler</p>
+                <p class="game-subtitle">Abyss Dungeon Crawler v2.0</p>
+                <div class="version-features">陷阱 · 宝箱 · Boss战 · 商店 · 稀有装备</div>
                 <div class="title-art">
                     ⚔️ 🏰 💀
                 </div>
                 <button id="btn-start" class="menu-btn">开始冒险</button>
+                <button id="btn-continue" class="menu-btn" style="display:none">继续游戏</button>
                 <button id="btn-help" class="menu-btn">操作说明</button>
+                <button id="btn-scores" class="menu-btn">排行榜</button>
             </div>
         </div>
 
@@ -47,7 +50,7 @@
                     </div>
                     <div class="help-item">
                         <span class="key">E</span>
-                        <span class="desc">拾取物品</span>
+                        <span class="desc">拾取 / 开箱 / 进商店</span>
                     </div>
                     <div class="help-item">
                         <span class="key">Q</span>
@@ -56,6 +59,10 @@
                     <div class="help-item">
                         <span class="key">></span>
                         <span class="desc">下楼梯（站在楼梯上）</span>
+                    </div>
+                    <div class="help-item">
+                        <span class="key">Shift+S</span>
+                        <span class="desc">手动保存</span>
                     </div>
                 </div>
                 <div class="legend">
@@ -66,13 +73,26 @@
                         <span class="legend-item"><span class="sym floor-sym">.</span> 地板</span>
                         <span class="legend-item"><span class="sym stair-sym">></span> 楼梯</span>
                         <span class="legend-item"><span class="sym enemy-sym">g</span> 哥布林</span>
-                        <span class="legend-item"><span class="sym enemy-sym">s</span> 骷髅</span>
-                        <span class="legend-item"><span class="sym enemy-sym">o</span> 兽人</span>
                         <span class="legend-item"><span class="sym enemy-sym">D</span> 恶龙</span>
+                        <span class="legend-item"><span class="sym boss-sym">B</span> BOSS</span>
                         <span class="legend-item"><span class="sym potion-sym">!</span> 药水</span>
                         <span class="legend-item"><span class="sym weapon-sym">)</span> 武器</span>
                         <span class="legend-item"><span class="sym armor-sym">]</span> 护甲</span>
                         <span class="legend-item"><span class="sym gold-sym">$</span> 金币</span>
+                        <span class="legend-item"><span class="sym key-sym">k</span> 钥匙</span>
+                        <span class="legend-item"><span class="sym chest-sym">=</span> 宝箱</span>
+                        <span class="legend-item"><span class="sym shop-sym">S</span> 商店</span>
+                        <span class="legend-item"><span class="sym trap-sym">^</span> 陷阱</span>
+                    </div>
+                </div>
+                <div class="legend" style="margin-top:1em">
+                    <h3>稀有度</h3>
+                    <div class="legend-grid">
+                        <span class="legend-item" style="color:#aaa">普通</span>
+                        <span class="legend-item" style="color:#44ff44">优良</span>
+                        <span class="legend-item" style="color:#4488ff">稀有</span>
+                        <span class="legend-item" style="color:#cc44ff">史诗</span>
+                        <span class="legend-item" style="color:#ffaa00">传说</span>
                     </div>
                 </div>
                 <button id="btn-back" class="menu-btn">返回</button>
@@ -107,6 +127,12 @@
                         <span>DEF:<span id="def-text">2</span></span>
                         <span>金币:<span id="gold-text">0</span></span>
                         <span>药水:<span id="potion-text">0</span></span>
+                        <span>钥匙:<span id="key-text">0</span></span>
+                    </div>
+                    <div class="stat-inline" style="margin-top:2px">
+                        <span>武器:<span id="weapon-text">无</span></span>
+                        <span>护甲:<span id="armor-text">无</span></span>
+                        <span id="status-effects"></span>
                     </div>
                 </div>
             </div>
@@ -115,6 +141,10 @@
             </div>
             <div id="message-log">
                 <div id="messages"></div>
+            </div>
+            <!-- 商店覆盖层 -->
+            <div id="shop-overlay" class="hidden">
+                <div id="shop-content"></div>
             </div>
             <!-- 移动端触控按钮 -->
             <div id="touch-controls">
@@ -145,7 +175,9 @@
                     <p>到达层数: <span id="death-floor">1</span></p>
                     <p>等级: <span id="death-level">1</span></p>
                     <p>击杀数: <span id="death-kills">0</span></p>
+                    <p>Boss击杀: <span id="death-bosses">0</span></p>
                     <p>金币: <span id="death-gold">0</span></p>
+                    <p class="score-line">得分: <span id="death-score">0</span></p>
                 </div>
                 <button id="btn-retry" class="menu-btn">再来一次</button>
             </div>
@@ -159,9 +191,20 @@
                 <div class="win-stats">
                     <p>等级: <span id="win-level">1</span></p>
                     <p>击杀数: <span id="win-kills">0</span></p>
+                    <p>Boss击杀: <span id="win-bosses">0</span></p>
                     <p>金币: <span id="win-gold">0</span></p>
+                    <p class="score-line">得分: <span id="win-score">0</span></p>
                 </div>
                 <button id="btn-win-retry" class="menu-btn">再来一次</button>
+            </div>
+        </div>
+
+        <!-- 排行榜画面 -->
+        <div id="scores-screen" class="hidden">
+            <div class="scores-content">
+                <h1 class="scores-title">排行榜</h1>
+                <div id="scores-list"></div>
+                <button id="btn-scores-back" class="menu-btn">返回</button>
             </div>
         </div>
     </div>
